@@ -2,42 +2,66 @@
 # 
 # tournament.py -- implementation of a Swiss-system tournament
 #
-
+from contextlib import contextmanager
 import psycopg2
 import bleach
 
+
+
+
+
+
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    try:
+        return psycopg2.connect("dbname=tournament")
+    except:
+        print("Failed to connect the database!")
+
+@contextmanager
+def get_cursor():
+    """
+    Query helper function using context lib. Creates a cursor from a database
+    connection object, and performs queries using that cursor.
+    """
+    DB = connect()
+    cursor = DB.cursor()
+    try:
+        yield cursor
+    except:
+        raise
+    else:
+        DB.commit()
+    finally:
+        cursor.close()
+        DB.close()
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    DB = connect()
-    c = DB.cursor()
-    c.execute("DELETE FROM matches")
-    c.execute("UPDATE players set score = 0, games = 0 " )
-    DB.commit()
-    DB.close()
+
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM matches")
+        cursor.execute("DELETE FROM opponentlist")
+        cursor.execute("UPDATE players set score = 0, games = 0 ")
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    DB = connect()
-    c = DB.cursor()
-    c.execute("DELETE FROM players")
-    c.execute("DELETE FROM matches")
-    DB.commit()
-    DB.close()
+
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM players")
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    DB = connect()
-    c = DB.cursor()
-    c.execute("SELECT COUNT(name) as num from players")
-    count = c.fetchall()[0][0]
-    DB.close()
-    return count
+
+
+    
+
+    with get_cursor() as cursor:
+        cursor.execute("SELECT COUNT(name) as num from players")
+        count = cursor.fetchall()[0][0]
+        return count
 
 def registerPlayer(name):
     """Adds a player to the tournament database.
@@ -48,12 +72,9 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    DB = connect()
-    c = DB.cursor()
-     
-    c.execute("INSERT INTO players (name, score, games) VALUES (%s,%s,%s)",(name,str(0),str(0)))
-    DB.commit()
-    DB.close()
+
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO players (name, score, games) VALUES (%s,%s,%s)",(name,str(0),str(0)))    
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -68,30 +89,26 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    DB = connect()
-    c = DB.cursor()
-    c.execute("SELECT * from players order by score")
-    Players = [(row[3], str(row[0]), row[1], row[2]) for row in c.fetchall()]
-    DB.close()    
-    return Players
 
-def reportMatch(winner, loser):
+    with get_cursor() as cursor:
+        cursor.execute("SELECT * from opponent") 
+        Players = [(row[3], str(row[0]), row[1], row[2]) for row in cursor.fetchall()]    
+        return Players
+
+def reportMatch(winner, loser, round):
     """Records the outcome of a single match between two players.
 
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    DB = connect()
-    c = DB.cursor()
-    query = "INSERT INTO matches (winer,loser) VALUES ({},{})"
-    c.execute(query.format(winner,loser))
-    
-    c.execute("UPDATE players set score = score + 1, games = games +1 where id = %s" , (str(winner),))
-    
-    c.execute("UPDATE players set games = games +1 where id = %s" , (str(loser),))
-    DB.commit()
-    DB.close()
+
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO matches (winner,loser) VALUES (%s,%s)",(str(winner),str(loser)))
+        cursor.execute("UPDATE players set score = score + 1, games = games +1 where id = %s" , (str(winner),))
+        cursor.execute("UPDATE players set games = games +1 where id = %s" , (str(loser),)) 
+        cursor.execute("INSERT INTO opponentlist VALUES (%s,%s,%s)" , (str(winner),str(loser),str(round)))
+        cursor.execute("INSERT INTO opponentlist VALUES (%s,%s,%s)" , (str(loser),str(winner),str(round)))
  
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -114,4 +131,10 @@ def swissPairings():
         playerlist.append((Players[i*2][0],Players[i*2][1],Players[i*2+1][0],Players[i*2+1][1]))
     return playerlist
 
-
+def querytheview():
+    DB = connect()
+    c = DB.cursor()
+    c.execute("SELECT * from opponent")
+    result = c.fetchall()
+    DB.close()    
+    return result

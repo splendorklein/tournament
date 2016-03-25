@@ -81,8 +81,8 @@ def testReportMatches():
     registerPlayer("Diane Grant")
     standings = playerStandings()
     [id1, id2, id3, id4] = [row[0] for row in standings]
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
+    reportMatch(id1, id2, 1)
+    reportMatch(id3, id4, 1)
     standings = playerStandings()
     for (i, n, w, m) in standings:
         if m != 1:
@@ -123,10 +123,11 @@ def testPairings():
     if len(pairings) != 4:
         raise ValueError(
             "For eight players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
-    reportMatch(id1, id2)
-    reportMatch(id3, id4)
-    reportMatch(id5, id6)
-    reportMatch(id7, id8)
+    reportMatch(id1, id2, 1)
+    reportMatch(id3, id4, 1)
+    reportMatch(id5, id6, 1)
+    reportMatch(id7, id8, 1)
+    #print querytheview()
     pairings = swissPairings()
     if len(pairings) != 4:
         raise ValueError(
@@ -146,6 +147,27 @@ def testPairings():
                 "After one match, players with one win should be paired.")
     print "10. After one match, players with one win are properly paired."
 
+    ######### second round !!! ##########
+    standings = playerStandings()
+    [id1, id2, id3, id4, id5, id6, id7, id8] = [row[0] for row in standings]
+    pairings = swissPairings()
+    
+    reportMatch(id1, id2, 2)
+    reportMatch(id3, id4, 2)
+    reportMatch(id5, id6, 2)
+    reportMatch(id7, id8, 2)
+    ######### third round !!! ##########
+    standings = playerStandings()
+    [id1, id2, id3, id4, id5, id6, id7, id8] = [row[0] for row in standings]
+    pairings = swissPairings()
+    
+    reportMatch(id1, id2, 3)
+    reportMatch(id3, id4, 3)
+    reportMatch(id5, id6, 3)
+    reportMatch(id7, id8, 3)
+
+    standings = playerStandings()
+    print 'winner is ' + standings[0][1]
 
 if __name__ == '__main__':
     testCount()
