@@ -12,7 +12,7 @@ def connect():
         return psycopg2.connect("dbname=tournament")
     except:
         print("Failed to connect the database!")
-
+# It's inspired by the last project review to write it this way. Part of the connect and the get_cursor function cited from the reviewer's instruction.
 @contextmanager
 def get_cursor():
     """
