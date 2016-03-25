@@ -6,11 +6,6 @@ from contextlib import contextmanager
 import psycopg2
 import bleach
 
-
-
-
-
-
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
     try:

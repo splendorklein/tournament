@@ -30,4 +30,4 @@ CREATE VIEW opponent as select OMW.name, OMW.score, OMW.games, OMW.id, sum(oppon
 						left join players as opponents (oname, oscore, ogames, opid) on OMW.opponentid = opponents.opid 
 						group by OMW.id order by OMW.score desc, OMWscore desc;
 
-
+-- When two players have the same number of wins, the view is used to rank them according to OMW
